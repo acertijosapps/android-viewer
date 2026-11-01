@@ -7,6 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
@@ -87,7 +88,8 @@ const serialArg = z
   .describe('Serial de adb (p. ej. emulator-5556). Opcional si hay un solo dispositivo conectado.');
 const coord = (what) => z.number().min(0).max(1).describe(`${what}, normalizada 0–1 sobre la captura de pantalla`);
 
-const server = new McpServer({ name: 'android-viewer', version: '0.1.0' });
+const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+const server = new McpServer({ name: 'android-viewer', version });
 
 server.registerTool(
   'list_devices',

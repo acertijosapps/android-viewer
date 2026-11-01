@@ -12,6 +12,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/); version
 - Posturas: en emuladores mueven la bisagra simulada (`emu posture`); en dispositivos físicos y Trasera, `cmd device_state state`. El stream sigue al display activo al plegar o rotar.
 - API HTTP del visor (`/api/devices`, `/state`, `/screenshot`, `/tap`, `/swipe`, `/key`, `/text`, `/posture`, `/rotate`, `/launch`), solo desde orígenes locales.
 - MCP por stdio (`list_devices`, `launch_avd`, `get_state`, `screenshot`, `tap`, `swipe`, `press_key`, `type_text`, `rotate`, `set_posture`): habla con el visor para que todo se vea en vivo, o con adb directo si el visor está apagado.
+- Comando `android-viewer` para `npx @acertijosapps/android-viewer`: sin argumentos arranca el visor (`--port`, `--host`) y `mcp` arranca el MCP (`--viewer-url`); `--help` y `--version`.
 - Git flow del proyecto: CHANGELOG, guía de contribución, hooks de git (Conventional Commits y ramas protegidas) y CI en GitHub Actions.
 
 ### Cambiado

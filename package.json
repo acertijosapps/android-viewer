@@ -4,7 +4,11 @@
   "description": "Visor web del emulador de Android (screenrecord H.264 + WebCodecs, input por adb, posturas de plegable) y MCP para que un agente lo maneje.",
   "type": "module",
   "main": "server.js",
+  "bin": {
+    "android-viewer": "bin/android-viewer.js"
+  },
   "files": [
+    "bin",
     "server.js",
     "lib",
     "mcp",
@@ -13,9 +17,9 @@
     "LICENSE"
   ],
   "scripts": {
-    "start": "node server.js",
-    "mcp": "node mcp/server.js",
-    "check": "node --check server.js && node --check lib/device.js && node --check mcp/server.js && node --check public/viewer.js",
+    "start": "node bin/android-viewer.js",
+    "mcp": "node bin/android-viewer.js mcp",
+    "check": "node --check bin/android-viewer.js && node --check server.js && node --check lib/device.js && node --check mcp/server.js && node --check public/viewer.js",
     "postinstall": "git config core.hooksPath .githooks || exit 0"
   },
   "keywords": [
