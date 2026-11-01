@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "android-viewer": {
+      "command": "node",
+      "args": ["mcp/server.js"],
+      "env": {
+        "ANDROID_VIEWER_URL": "http://localhost:8093"
+      }
+    }
+  }
+}

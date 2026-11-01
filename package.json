@@ -1,0 +1,53 @@
+{
+  "name": "@acertijosapps/android-viewer",
+  "version": "0.1.0",
+  "description": "Visor web del emulador de Android (screenrecord H.264 + WebCodecs, input por adb, posturas de plegable) y MCP para que un agente lo maneje.",
+  "type": "module",
+  "main": "server.js",
+  "files": [
+    "server.js",
+    "lib",
+    "mcp",
+    "public",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "start": "node server.js",
+    "mcp": "node mcp/server.js"
+  },
+  "keywords": [
+    "android",
+    "emulator",
+    "avd",
+    "adb",
+    "screenrecord",
+    "webcodecs",
+    "foldable",
+    "mcp",
+    "model-context-protocol",
+    "claude-code"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acertijosapps/android-viewer.git"
+  },
+  "author": "AcertijosApps <acertijos.contacto@gmail.com> (https://acertijosapps.com/librerias/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/acertijosapps/android-viewer/issues"
+  },
+  "homepage": "https://acertijosapps.com/librerias/",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "ws": "^8.18.0",
+    "zod": "4.6.7"
+  }
+}

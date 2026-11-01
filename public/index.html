@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Android Viewer</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <select id="device" aria-label="Dispositivo"></select>
+      <span id="status" aria-live="polite"></span>
+    </header>
+    <main id="stage">
+      <canvas id="screen" width="0" height="0"></canvas>
+      <div id="placeholder">
+        <p id="placeholder-text">Conectando…</p>
+        <button id="launch" class="primary" hidden>Iniciar emulador</button>
+      </div>
+    </main>
+    <footer class="bar controls">
+      <div class="group" role="group" aria-label="Navegación">
+        <button data-key="back" title="Atrás">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" /></svg>
+        </button>
+        <button data-key="home" title="Inicio">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6" /></svg>
+        </button>
+        <button data-key="recents" title="Recientes">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="1.5" /></svg>
+        </button>
+      </div>
+      <div class="group" role="group" aria-label="Botones físicos">
+        <button data-key="power" title="Encendido">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v7M7.5 7.2a7 7 0 1 0 9 0" /></svg>
+        </button>
+        <button data-key="voldown" title="Bajar volumen">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h3l4 4V6L7 10zM15 12h5" /></svg>
+        </button>
+        <button data-key="volup" title="Subir volumen">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h3l4 4V6L7 10zM15 12h5M17.5 9.5v5" /></svg>
+        </button>
+      </div>
+      <div class="group emu-only" role="group" aria-label="Rotación">
+        <button data-rotate="left" title="Rotar a la izquierda">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v5h5" /><path d="M5.5 15a7 7 0 1 0 1.2-7.4L4 10" /></svg>
+        </button>
+        <button data-rotate="right" title="Rotar a la derecha">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 5v5h-5" /><path d="M18.5 15a7 7 0 1 1-1.2-7.4L20 10" /></svg>
+        </button>
+      </div>
+      <div class="group" role="group" aria-label="Captura">
+        <button id="screenshot" title="Guardar captura (PNG a resolución completa)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>
+        </button>
+      </div>
+      <div class="group" id="postures" role="group" aria-label="Postura" hidden></div>
+    </footer>
+    <script type="module" src="viewer.js"></script>
+  </body>
+</html>
