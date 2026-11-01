@@ -148,7 +148,6 @@ once and a watchdog restarts the stream if a gesture produces no frames.
   while it is in the foreground.
 - `Flip_Horizontal_Fold` style AVDs with a single physical display change state when closed, but the
   picture stays the same.
-- The viewer UI is in Spanish for now.
 
 ## Why not ws-scrcpy?
 

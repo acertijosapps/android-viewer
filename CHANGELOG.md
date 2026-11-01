@@ -15,6 +15,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/); version
 - Capturas en JavaScript puro: `screencap` en crudo, reducción por promedio de área y PNG con `zlib`, sin `sips` ni otras herramientas del sistema, así que funcionan en macOS, Linux y Windows. `GET /api/screenshot?max=<px>` reduce la imagen y devuelve el tamaño real en `X-Screen-Width`/`X-Screen-Height`.
 - Comando `android-viewer` para `npx @acertijosapps/android-viewer`: sin argumentos arranca el visor (`--port`, `--host`) y `mcp` arranca el MCP (`--viewer-url`); `--help` y `--version`.
 - README en inglés con captura del visor (`media/`, incluida en el paquete y servida por unpkg), instalación con `npx` y configuración del MCP para Claude Code y otros clientes.
+- Textos en inglés: interfaz del visor, errores de la API, herramientas del MCP y mensajes de la terminal.
 - Git flow del proyecto: CHANGELOG, guía de contribución, hooks de git (Conventional Commits y ramas protegidas) y CI en GitHub Actions.
 
 ### Cambiado
