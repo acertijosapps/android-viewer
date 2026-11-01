@@ -1,0 +1,43 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.acertijosapps/android-viewer",
+  "title": "Android Viewer",
+  "description": "Drive Android emulators: screenshots, taps, swipes, keys, text, rotation and foldable postures.",
+  "repository": {
+    "url": "https://github.com/acertijosapps/android-viewer",
+    "source": "github"
+  },
+  "websiteUrl": "https://github.com/acertijosapps/android-viewer#readme",
+  "version": "1.0.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@acertijosapps/android-viewer",
+      "version": "1.0.0",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "ANDROID_VIEWER_URL",
+          "description": "Viewer to show actions live (default http://localhost:8093); without it, adb is used directly",
+          "isRequired": false,
+          "format": "string"
+        },
+        {
+          "name": "ANDROID_HOME",
+          "description": "Android SDK location, if adb and emulator are not found automatically",
+          "isRequired": false,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}

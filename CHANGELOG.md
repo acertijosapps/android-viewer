@@ -6,6 +6,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/); version
 ## [Sin liberar]
 
 ### Añadido
+- Registro oficial de MCP como `io.github.acertijosapps/android-viewer`: `mcpName` en `package.json`, `server.json` (arranca con `npx @acertijosapps/android-viewer mcp`) y workflow que valida `server.json` en cada PR y lo publica por OIDC al crear un Release de GitHub.
 
 ### Cambiado
 
