@@ -31,7 +31,7 @@ async function viewer(method, route, params = {}) {
   try {
     res = await fetch(url, init);
   } catch (err) {
-    if (err.name === 'TimeoutError') throw new Error(`El visor no respondió en ${VIEWER_TIMEOUT_MS / 1000} s`);
+    if (err.name === 'TimeoutError') throw new Error(`The viewer did not answer within ${VIEWER_TIMEOUT_MS / 1000} s`);
     throw new ViewerDown(err.message);
   }
   if (!res.ok) {
@@ -64,8 +64,8 @@ const text = (value) => ({ content: [{ type: 'text', text: typeof value === 'str
 const serialArg = z
   .string()
   .optional()
-  .describe('Serial de adb (p. ej. emulator-5556). Opcional si hay un solo dispositivo conectado.');
-const coord = (what) => z.number().min(0).max(1).describe(`${what}, normalizada 0–1 sobre la captura de pantalla`);
+  .describe('adb serial (e.g. emulator-5556). Optional when only one device is connected.');
+const coord = (what) => z.number().min(0).max(1).describe(`${what}, normalized 0–1 over the screenshot`);
 
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const server = new McpServer({ name: 'android-viewer', version });
@@ -73,10 +73,10 @@ const server = new McpServer({ name: 'android-viewer', version });
 server.registerTool(
   'list_devices',
   {
-    title: 'Listar dispositivos',
+    title: 'List devices',
     description:
-      'Lista los AVDs del equipo (con serial y booted si el emulador está corriendo) y los ' +
-      'dispositivos de adb que no son AVD. Un AVD con serial null está apagado: arráncalo con launch_avd.',
+      'Lists the AVDs on this machine (with serial and booted when the emulator is running) and the ' +
+      'adb devices that are not AVDs. An AVD with serial null is stopped: start it with launch_avd.',
     annotations: { readOnlyHint: true },
   },
   async () => text((await run('devices', 'GET', '/api/devices', {})).result),
@@ -85,10 +85,10 @@ server.registerTool(
 server.registerTool(
   'get_state',
   {
-    title: 'Estado del dispositivo',
+    title: 'Device state',
     description:
-      'Tamaño y rotación del display activo, postura actual y posturas disponibles (plegables). ' +
-      'Incluye la URL del visor para verlo en el panel del navegador.',
+      'Size and rotation of the active display, current posture and available postures (foldables). ' +
+      'Includes the viewer URL to watch the device in a browser pane.',
     inputSchema: { serial: serialArg },
     annotations: { readOnlyHint: true },
   },
@@ -96,7 +96,7 @@ server.registerTool(
     const { result, via } = await run('state', 'GET', '/api/state', { serial });
     return text({
       ...result,
-      viewer: via === 'visor' ? `${VIEWER_URL}/?serial=${result.serial}` : 'apagado (inícialo con `npm start` o preview_start android-view)',
+      viewer: via === 'visor' ? `${VIEWER_URL}/?serial=${result.serial}` : 'not running (start it with `npx @acertijosapps/android-viewer`)',
     });
   },
 );
@@ -104,10 +104,10 @@ server.registerTool(
 server.registerTool(
   'screenshot',
   {
-    title: 'Captura de pantalla',
+    title: 'Screenshot',
     description:
-      'Captura la pantalla del display activo (PNG). Para tap/swipe usa coordenadas normalizadas: ' +
-      'x = píxel_x / ancho de la imagen, y = píxel_y / alto de la imagen.',
+      'Captures the active display (PNG). For tap/swipe use normalized coordinates: ' +
+      'x = pixel_x / image width, y = pixel_y / image height.',
     inputSchema: { serial: serialArg },
     annotations: { readOnlyHint: true },
   },
@@ -116,7 +116,7 @@ server.registerTool(
     return {
       content: [
         { type: 'image', data: shot.data.toString('base64'), mimeType: shot.mimeType },
-        { type: 'text', text: `Pantalla de ${shot.screenWidth}×${shot.screenHeight} px (imagen con lado mayor ≤ ${SCREENSHOT_MAX}).` },
+        { type: 'text', text: `Screen is ${shot.screenWidth}×${shot.screenHeight} px (image scaled to a longest side ≤ ${SCREENSHOT_MAX}).` },
       ],
     };
   },
@@ -125,72 +125,72 @@ server.registerTool(
 server.registerTool(
   'tap',
   {
-    title: 'Tocar',
-    description: 'Toca un punto de la pantalla (input tap).',
-    inputSchema: { x: coord('Coordenada x'), y: coord('Coordenada y'), serial: serialArg },
+    title: 'Tap',
+    description: 'Taps a point on the screen (input tap).',
+    inputSchema: { x: coord('x coordinate'), y: coord('y coordinate'), serial: serialArg },
   },
   async ({ x, y, serial }) => {
     await run('tap', 'POST', '/api/tap', { serial, x, y });
-    return text(`tap en (${x.toFixed(3)}, ${y.toFixed(3)})`);
+    return text(`tapped (${x.toFixed(3)}, ${y.toFixed(3)})`);
   },
 );
 
 server.registerTool(
   'swipe',
   {
-    title: 'Deslizar',
+    title: 'Swipe',
     description:
-      'Desliza de un punto a otro (input swipe). Con el mismo punto de inicio y fin y una ' +
-      'duración ≥ 500 ms es una pulsación larga.',
+      'Swipes from one point to another (input swipe). With the same start and end point and a ' +
+      'duration ≥ 500 ms it is a long press.',
     inputSchema: {
-      x1: coord('x inicial'),
-      y1: coord('y inicial'),
-      x2: coord('x final'),
-      y2: coord('y final'),
-      duration_ms: z.number().int().min(50).max(5000).default(300).describe('Duración del gesto en ms'),
+      x1: coord('Start x'),
+      y1: coord('Start y'),
+      x2: coord('End x'),
+      y2: coord('End y'),
+      duration_ms: z.number().int().min(50).max(5000).default(300).describe('Gesture duration in ms'),
       serial: serialArg,
     },
   },
   async ({ x1, y1, x2, y2, duration_ms, serial }) => {
     await run('swipe', 'POST', '/api/swipe', { serial, x1, y1, x2, y2, ms: duration_ms });
-    return text(`swipe (${x1.toFixed(3)}, ${y1.toFixed(3)}) → (${x2.toFixed(3)}, ${y2.toFixed(3)}) en ${duration_ms} ms`);
+    return text(`swipe (${x1.toFixed(3)}, ${y1.toFixed(3)}) → (${x2.toFixed(3)}, ${y2.toFixed(3)}) in ${duration_ms} ms`);
   },
 );
 
 server.registerTool(
   'press_key',
   {
-    title: 'Pulsar tecla',
-    description: 'Pulsa una tecla del sistema (input keyevent).',
-    inputSchema: { key: z.enum(Object.keys(KEYCODES)).describe('Tecla'), serial: serialArg },
+    title: 'Press key',
+    description: 'Presses a system key (input keyevent).',
+    inputSchema: { key: z.enum(Object.keys(KEYCODES)).describe('Key'), serial: serialArg },
   },
   async ({ key, serial }) => {
     await run('key', 'POST', '/api/key', { serial, key });
-    return text(`tecla ${key}`);
+    return text(`pressed ${key}`);
   },
 );
 
 server.registerTool(
   'type_text',
   {
-    title: 'Escribir texto',
-    description: 'Escribe texto ASCII en el campo enfocado (input text). Para Enter usa press_key.',
-    inputSchema: { text: z.string().min(1).max(1000).describe('Texto a escribir'), serial: serialArg },
+    title: 'Type text',
+    description: 'Types ASCII text into the focused field (input text). For Enter use press_key.',
+    inputSchema: { text: z.string().min(1).max(1000).describe('Text to type'), serial: serialArg },
   },
   async ({ text: value, serial }) => {
     await run('text', 'POST', '/api/text', { serial, text: value });
-    return text(`escrito: ${JSON.stringify(value)}`);
+    return text(`typed ${JSON.stringify(value)}`);
   },
 );
 
 server.registerTool(
   'launch_avd',
   {
-    title: 'Iniciar AVD',
+    title: 'Launch AVD',
     description:
-      'Arranca un emulador por nombre de AVD (ver list_devices). Vuelve enseguida: espera a que ' +
-      'list_devices lo muestre con booted=true antes de usarlo.',
-    inputSchema: { avd: z.string().describe('Nombre del AVD, p. ej. Pixel_10_Pro_Fold') },
+      'Starts an emulator by AVD name (see list_devices). Returns right away: wait until ' +
+      'list_devices shows it with booted=true before using it.',
+    inputSchema: { avd: z.string().describe('AVD name, e.g. Pixel_10_Pro_Fold') },
   },
   async ({ avd }) => text((await run('launch', 'POST', '/api/launch', { avd })).result),
 );
@@ -198,27 +198,27 @@ server.registerTool(
 server.registerTool(
   'rotate',
   {
-    title: 'Rotar',
-    description: 'Rota el emulador 90° (como el botón de rotar del emulador). Solo emuladores.',
-    inputSchema: { direction: z.enum(['left', 'right']).describe('Sentido'), serial: serialArg },
+    title: 'Rotate',
+    description: "Rotates the emulator 90° (like the emulator's rotate button). Emulators only.",
+    inputSchema: { direction: z.enum(['left', 'right']).describe('Direction'), serial: serialArg },
   },
   async ({ direction, serial }) => {
     await run('rotate', 'POST', '/api/rotate', { serial, direction });
-    return text(`rotado a la ${direction === 'left' ? 'izquierda' : 'derecha'}`);
+    return text(`rotated ${direction}`);
   },
 );
 
 server.registerTool(
   'set_posture',
   {
-    title: 'Cambiar postura',
+    title: 'Set posture',
     description:
-      'Cambia la postura de un plegable. En emuladores mueve la bisagra simulada (`emu posture`); ' +
-      'en dispositivos físicos o REAR_DISPLAY usa `cmd device_state state`. Acepta el nombre ' +
-      '(closed, half_opened, opened, rear_display), el id numérico o "reset" para volver a la del sensor. ' +
-      'Devuelve el estado nuevo.',
+      'Changes the posture of a foldable. On emulators it moves the simulated hinge (`emu posture`); ' +
+      'on physical devices or for REAR_DISPLAY it uses `cmd device_state state`. Accepts the name ' +
+      '(closed, half_opened, opened, rear_display), the numeric id or "reset" to go back to the sensor posture. ' +
+      'Returns the new state.',
     inputSchema: {
-      posture: z.union([z.string(), z.number().int()]).describe('Nombre, id o "reset"'),
+      posture: z.union([z.string(), z.number().int()]).describe('Name, id or "reset"'),
       serial: serialArg,
     },
   },
@@ -226,4 +226,4 @@ server.registerTool(
 );
 
 await server.connect(new StdioServerTransport());
-console.error(`android-viewer MCP listo (visor: ${VIEWER_URL})`);
+console.error(`android-viewer MCP ready (viewer: ${VIEWER_URL})`);

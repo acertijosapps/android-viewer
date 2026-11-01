@@ -165,11 +165,11 @@ class DeviceSession {
     this.state = await readDisplayState(this.serial);
     if (this.disposed) return;
     this.pollTimer = setInterval(() => this.poll(), POLL_MS);
-    log(this.serial, 'sesión', JSON.stringify(this.state), 'posturas', this.states.map((s) => s.name).join(','));
+    log(this.serial, 'session', JSON.stringify(this.state), 'postures', this.states.map((s) => s.name).join(','));
   }
 
   dispose() {
-    log(this.serial, 'sin clientes; se detiene');
+    log(this.serial, 'no viewers left; stopping');
     this.disposed = true;
     clearInterval(this.pollTimer);
     clearTimeout(this.restartTimer);
@@ -195,7 +195,7 @@ class DeviceSession {
       // más nuevo (p. ej. tras set_posture), este resultado ya es viejo.
       if (version === this.stateVersion) this.applyState(next);
     } catch (err) {
-      log(this.serial, 'poll falló:', err.message);
+      log(this.serial, 'poll failed:', err.message);
     } finally {
       this.polling = false;
     }
@@ -214,7 +214,7 @@ class DeviceSession {
       next.rotation !== prev.rotation ||
       next.displayId !== prev.displayId;
     if (displayChanged || next.posture?.id !== prev.posture?.id) {
-      log(this.serial, 'cambio', JSON.stringify(next));
+      log(this.serial, 'changed', JSON.stringify(next));
       this.broadcastJson(this.meta());
     }
     if (displayChanged) this.restart(DISPLAY_SETTLE_MS);
@@ -278,7 +278,7 @@ class DeviceSession {
     const splitter = new AnnexBSplitter(
       (nal) => this.recorder === proc && this.onNal(nal, proc),
       (tailMs) => {
-        log(this.serial, `NAL cortado antes de tiempo; umbral ahora ${tailMs} ms`);
+        log(this.serial, `NAL flushed too early; threshold now ${tailMs} ms`);
         this.requestKeyframe();
       },
     );
@@ -293,7 +293,7 @@ class DeviceSession {
       // Fin normal por límite de tiempo → reinicio inmediato; si muere al arrancar, con espera.
       const ranMs = Date.now() - proc.startedAt;
       this.backoff = ranMs > 3000 ? 300 : Math.min(this.backoff * 2, 5000);
-      log(this.serial, `screenrecord terminó (code=${code} signal=${signal}, ${ranMs} ms); reinicio en ${this.backoff} ms`);
+      log(this.serial, `screenrecord exited (code=${code} signal=${signal}, ${ranMs} ms); restarting in ${this.backoff} ms`);
       this.restart(this.backoff);
     });
     log(this.serial, `screenrecord ${vw}x${vh} display=${displayId ?? 'default'}`);
@@ -318,7 +318,7 @@ class DeviceSession {
       'shell',
       `for i in 1 2 3 4 5 6 7 8 9 10; do [ -f ${f} ] && break; sleep 0.1; done; p=$(cat ${f} 2>/dev/null); ` +
         `if [ -n "$p" ]; then kill $p 2>/dev/null; for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do kill -0 $p 2>/dev/null || break; sleep 0.1; done; fi; rm -f ${f}`,
-    ]).catch((err) => log(this.serial, 'no se pudo detener screenrecord:', err.message));
+    ]).catch((err) => log(this.serial, 'could not stop screenrecord:', err.message));
   }
 
   async sendSnapshot(targets) {
@@ -328,7 +328,7 @@ class DeviceSession {
       const msg = Buffer.concat([Buffer.from([FLAG_IMAGE]), data]);
       for (const ws of targets) if (ws.readyState === ws.OPEN) ws.send(msg);
     } catch (err) {
-      log(this.serial, 'screencap falló:', err.message);
+      log(this.serial, 'screencap failed:', err.message);
     }
   }
 
@@ -395,7 +395,7 @@ class DeviceSession {
     clearTimeout(this.watchdogTimer);
     this.watchdogTimer = setTimeout(() => {
       if (proc && this.recorder === proc && !(proc.lastFrameAt >= sentAt)) {
-        log(this.serial, 'sin frames tras el input; se reinicia screenrecord');
+        log(this.serial, 'no frames after input; restarting screenrecord');
         this.requestKeyframe();
       }
     }, INPUT_WATCHDOG_MS);
@@ -478,7 +478,7 @@ function readJson(req) {
     req.on('data', (c) => {
       size += c.length;
       if (size > MAX_BODY_BYTES) {
-        reject(Object.assign(new Error('Cuerpo demasiado grande'), { status: 413 }));
+        reject(Object.assign(new Error('Request body too large'), { status: 413 }));
         req.destroy();
       } else chunks.push(c);
     });
@@ -486,7 +486,7 @@ function readJson(req) {
       try {
         resolve(chunks.length ? JSON.parse(Buffer.concat(chunks).toString()) : {});
       } catch {
-        reject(Object.assign(new Error('JSON inválido'), { status: 400 }));
+        reject(Object.assign(new Error('Invalid JSON'), { status: 400 }));
       }
     });
     req.on('error', reject);
@@ -510,12 +510,12 @@ async function handleApi(req, res, url) {
     return;
   }
   const handler = API[route];
-  if (!handler) throw Object.assign(new Error('Ruta no encontrada'), { status: 404 });
+  if (!handler) throw Object.assign(new Error('Not found'), { status: 404 });
   let params = Object.fromEntries(url.searchParams);
   if (req.method === 'POST') {
     // JSON obligatorio: una página ajena no puede mandarlo sin preflight CORS, que aquí no se concede.
     if (!/^application\/json\b/.test(req.headers['content-type'] || '') || !isLocalOrigin(req.headers.origin)) {
-      throw Object.assign(new Error('Se requiere application/json desde un origen local'), { status: 403 });
+      throw Object.assign(new Error('application/json from a local origin is required'), { status: 403 });
     }
     params = { ...params, ...(await readJson(req)) };
   }
@@ -562,7 +562,7 @@ const wss = new WebSocketServer({
 wss.on('connection', async (ws, req) => {
   const serial = new URL(req.url, 'http://x').searchParams.get('serial') || '';
   if (!SERIAL_RE.test(serial)) {
-    ws.close(1008, 'serial inválido');
+    ws.close(1008, 'invalid serial');
     return;
   }
   let session = sessions.get(serial);
@@ -579,18 +579,18 @@ wss.on('connection', async (ws, req) => {
     } catch {
       return;
     }
-    session.handle(msg, ws).catch((err) => log(serial, 'mensaje falló:', err.message));
+    session.handle(msg, ws).catch((err) => log(serial, 'message failed:', err.message));
   });
   try {
     await session.add(ws);
   } catch (err) {
-    log(serial, 'no se pudo iniciar:', err.message);
+    log(serial, 'could not start:', err.message);
     session.send(ws, { type: 'error', message: err.message });
     ws.close();
   }
 });
 
-server.listen(PORT, HOST, () => log(`Android Viewer en http://${HOST === '127.0.0.1' ? 'localhost' : HOST}:${PORT}/ (adb: ${ADB})`));
+server.listen(PORT, HOST, () => log(`Android Viewer on http://${HOST === '127.0.0.1' ? 'localhost' : HOST}:${PORT}/ (adb: ${ADB})`));
 
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, () => {
