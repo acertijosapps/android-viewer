@@ -14,7 +14,9 @@
   ],
   "scripts": {
     "start": "node server.js",
-    "mcp": "node mcp/server.js"
+    "mcp": "node mcp/server.js",
+    "check": "node --check server.js && node --check lib/device.js && node --check mcp/server.js && node --check public/viewer.js",
+    "postinstall": "git config core.hooksPath .githooks || exit 0"
   },
   "keywords": [
     "android",
