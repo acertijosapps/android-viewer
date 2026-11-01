@@ -9,7 +9,7 @@ const placeholderText = $('#placeholder-text');
 const launchButton = $('#launch');
 const controls = $('.controls');
 
-const POSTURE_LABELS = { CLOSED: 'Cerrado', HALF_OPENED: 'Medio', OPENED: 'Abierto', REAR_DISPLAY_MODE: 'Trasera' };
+const POSTURE_LABELS = { CLOSED: 'Closed', HALF_OPENED: 'Half open', OPENED: 'Open', REAR_DISPLAY_MODE: 'Rear display' };
 const TAP_SLOP_PX = 20; // en píxeles del dispositivo
 const LONG_PRESS_MS = 500;
 const TARGETS_REFRESH_MS = 4000;
@@ -92,7 +92,7 @@ function onFrame(buf) {
   const flags = buf[0];
   const data = buf.subarray(1);
   if (flags & 0x80) {
-    drawSnapshot(data).catch((err) => console.warn('captura:', err));
+    drawSnapshot(data).catch((err) => console.warn('screenshot:', err));
     return;
   }
   const isKey = (flags & 1) !== 0;
@@ -152,7 +152,7 @@ function renderPostures() {
   );
   const reset = document.createElement('button');
   reset.textContent = 'Auto';
-  reset.title = 'Quita la postura forzada (cmd device_state state reset)';
+  reset.title = 'Clear the forced posture (cmd device_state state reset)';
   reset.onclick = () => send({ type: 'posture', id: 'reset' });
   postureGroup.append(reset);
 }
@@ -177,8 +177,8 @@ const selected = () => targets.find((t) => keyOf(t) === selectedKey);
 
 function targetLabel(t) {
   const name = t.avd || t.model || t.serial;
-  if (!t.serial) return `${name} · apagado`;
-  return t.booted === false ? `${name} · arrancando…` : `${name} · ${t.serial}`;
+  if (!t.serial) return `${name} · stopped`;
+  return t.booted === false ? `${name} · booting…` : `${name} · ${t.serial}`;
 }
 
 function showMessage(text, { launch = false } = {}) {
@@ -208,14 +208,14 @@ function disconnect() {
 function connect(nextSerial) {
   disconnect();
   serial = nextSerial;
-  showMessage('Conectando…');
+  showMessage('Connecting…');
   setControlsEnabled(true);
   const socket = new WebSocket(`ws://${location.host}/ws?serial=${encodeURIComponent(nextSerial)}`);
   socket.binaryType = 'arraybuffer';
   socket.onmessage = (e) => (typeof e.data === 'string' ? onJson(JSON.parse(e.data)) : onFrame(new Uint8Array(e.data)));
   socket.onclose = () => {
     if (ws !== socket) return;
-    renderStatus('Desconectado; reintentando…');
+    renderStatus('Disconnected; retrying…');
     // Si el emulador se cerró, refreshTargets() muestra «apagado» en vez de reintentar.
     setTimeout(() => ws === socket && refreshTargets(true), 1500);
   };
@@ -236,21 +236,21 @@ function applySelection(force = false) {
   }
   if (serial) disconnect();
   renderStatus('');
-  if (t.serial || launching.has(t.avd)) showMessage(`${t.avd || t.serial} está arrancando…`);
-  else showMessage(`${t.avd} está apagado.`, { launch: true });
+  if (t.serial || launching.has(t.avd)) showMessage(`${t.avd || t.serial} is booting…`);
+  else showMessage(`${t.avd} is stopped.`, { launch: true });
 }
 
 async function refreshTargets(reconnect = false) {
   try {
     targets = await (await fetch('api/devices')).json();
   } catch {
-    renderStatus('El visor no responde');
+    renderStatus('The viewer is not responding');
     return;
   }
   if (!targets.length) {
     deviceSelect.replaceChildren();
     disconnect();
-    showMessage('No hay AVDs ni dispositivos en adb.');
+    showMessage('No AVDs or adb devices found.');
     return;
   }
   if (!selected()) {
@@ -279,7 +279,7 @@ deviceSelect.onchange = () => {
 launchButton.onclick = async () => {
   const t = selected();
   launchButton.disabled = true;
-  placeholderText.textContent = `Iniciando ${t.avd}…`;
+  placeholderText.textContent = `Starting ${t.avd}…`;
   try {
     const res = await fetch('api/launch', {
       method: 'POST',
@@ -288,9 +288,9 @@ launchButton.onclick = async () => {
     });
     if (!res.ok) throw new Error((await res.json()).error);
     launching.add(t.avd);
-    showMessage(`${t.avd} está arrancando…`);
+    showMessage(`${t.avd} is booting…`);
   } catch (err) {
-    showMessage(`No se pudo iniciar ${t.avd}: ${err.message}`, { launch: true });
+    showMessage(`Could not start ${t.avd}: ${err.message}`, { launch: true });
   }
 };
 
@@ -301,29 +301,22 @@ setInterval(() => refreshTargets(), TARGETS_REFRESH_MS);
 document.querySelectorAll('[data-key]').forEach((b) => (b.onclick = () => send({ type: 'key', key: b.dataset.key })));
 document.querySelectorAll('[data-rotate]').forEach((b) => (b.onclick = () => send({ type: 'rotate', direction: b.dataset.rotate })));
 
-// Captura a resolución completa (la del canvas es la del video, reducida).
+// Captura a resolución completa (la del canvas es la del video, reducida); el visor ya la da en PNG.
 $('#screenshot').onclick = async () => {
   if (!serial) return;
   const t = selected();
-  renderStatus('Guardando captura…');
+  renderStatus('Saving screenshot…');
   try {
     const res = await fetch(`api/screenshot?serial=${encodeURIComponent(serial)}`);
     if (!res.ok) throw new Error((await res.json()).error);
-    const bitmap = await createImageBitmap(await res.blob());
-    const out = document.createElement('canvas');
-    out.width = bitmap.width;
-    out.height = bitmap.height;
-    out.getContext('2d').drawImage(bitmap, 0, 0);
-    bitmap.close();
-    const png = await new Promise((resolve) => out.toBlob(resolve, 'image/png'));
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(png);
+    a.href = URL.createObjectURL(await res.blob());
     a.download = `${t?.avd || serial}-${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.png`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     renderStatus();
   } catch (err) {
-    renderStatus(`Captura falló: ${err.message}`);
+    renderStatus(`Screenshot failed: ${err.message}`);
   }
 };
 
@@ -389,7 +382,7 @@ canvas.addEventListener(
 );
 
 if (!('VideoDecoder' in window)) {
-  showMessage('Este navegador no tiene WebCodecs (VideoDecoder).');
+  showMessage('This browser does not support WebCodecs (VideoDecoder).');
 } else {
   setControlsEnabled(false);
   refreshTargets();
