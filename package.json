@@ -1,6 +1,6 @@
 {
   "name": "@acertijosapps/android-viewer",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Visor web del emulador de Android (screenrecord H.264 + WebCodecs, input por adb, posturas de plegable) y MCP para que un agente lo maneje.",
   "type": "module",
   "main": "server.js",

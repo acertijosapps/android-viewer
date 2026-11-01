@@ -6,6 +6,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/); version
 ## [Sin liberar]
 
 ### Añadido
+
+### Cambiado
+
+### Corregido
+
+### Eliminado
+
+## [1.0.0] - 2026-11-01
+
+### Añadido
 - Visor web del emulador: `screenrecord` H.264 por WebSocket, decodificado con WebCodecs. Guarda el GOP para quien se conecta después y manda una captura mientras la pantalla está quieta.
 - Selector con todos los AVDs del equipo y los dispositivos de adb; un AVD apagado se arranca desde el visor.
 - Controles como los del emulador: Atrás, Inicio, Recientes, Encendido, volumen, rotar izquierda/derecha, guardar captura a resolución completa y posturas de plegable.
@@ -17,12 +27,6 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/); version
 - README en inglés con captura del visor (`media/`, incluida en el paquete y servida por unpkg), instalación con `npx` y configuración del MCP para Claude Code y otros clientes.
 - Textos en inglés: interfaz del visor, errores de la API, herramientas del MCP y mensajes de la terminal.
 - Git flow del proyecto: CHANGELOG, guía de contribución, hooks de git (Conventional Commits y ramas protegidas) y CI en GitHub Actions.
-
-### Cambiado
-
-### Corregido
-
-### Eliminado
 
 <!--
  Al promover beta → main: renombra [Sin liberar] a [X.Y.Z] - AAAA-MM-DD y vuelve a crear una
