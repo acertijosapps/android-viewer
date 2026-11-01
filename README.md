@@ -53,7 +53,7 @@ Registrado en `.mcp.json` como `android-viewer`. Claude Code pide habilitarlo la
 | `launch_avd` | Arranca un AVD por nombre |
 | `rotate` | Rota 90° a la izquierda o derecha (`emu rotate`) |
 | `get_state` | Tamaño, rotación, postura y posturas disponibles; URL del visor |
-| `screenshot` | Captura del display activo: `screencap` en crudo → BMP → JPEG con lado mayor ≤ 1024 (`sips`) |
+| `screenshot` | Captura del display activo: PNG con lado mayor ≤ 1024, sin herramientas del sistema |
 | `tap` | `input tap` |
 | `swipe` | `input swipe`; mismo punto y ≥ 500 ms = pulsación larga |
 | `press_key` | back, home, recents, power, wakeup, volup, voldown, enter, delete, tab, escape |
