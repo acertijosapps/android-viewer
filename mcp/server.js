@@ -3,15 +3,11 @@
 // si el visor no está corriendo, usa adb directo con la misma lógica (lib/device.js).
 // stdout es del protocolo MCP: los logs van a stderr.
 
-import os from 'node:os';
-import path from 'node:path';
-import { execFile } from 'node:child_process';
-import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { KEYCODES, createActions, imageSize, resolveSerial } from '../lib/device.js';
+import { KEYCODES, createActions, resolveSerial } from '../lib/device.js';
 
 const VIEWER_URL = (process.env.ANDROID_VIEWER_URL || 'http://localhost:8093').replace(/\/$/, '');
 const SCREENSHOT_MAX = Number(process.env.SCREENSHOT_MAX) || 1024;
@@ -43,7 +39,13 @@ async function viewer(method, route, params = {}) {
     throw new Error(body.error || `HTTP ${res.status}`);
   }
   const type = res.headers.get('content-type') || '';
-  return type.startsWith('image/') ? { data: Buffer.from(await res.arrayBuffer()), mimeType: type } : res.json();
+  if (!type.startsWith('image/')) return res.json();
+  return {
+    data: Buffer.from(await res.arrayBuffer()),
+    mimeType: type,
+    screenWidth: Number(res.headers.get('x-screen-width')),
+    screenHeight: Number(res.headers.get('x-screen-height')),
+  };
 }
 
 // Ejecuta una acción por el visor o, si no está corriendo, por adb.
@@ -54,29 +56,6 @@ async function run(action, method, route, params) {
     if (!(err instanceof ViewerDown)) throw err;
     const serial = action === 'devices' || action === 'launch' ? undefined : await resolveSerial(params.serial);
     return { result: await direct[action]({ ...params, serial }), via: 'adb' };
-  }
-}
-
-function execFileAsync(cmd, args) {
-  return new Promise((resolve, reject) =>
-    execFile(cmd, args, (err, stdout, stderr) => (err ? reject(new Error(String(stderr) || err.message)) : resolve(stdout))),
-  );
-}
-
-// Reduce la captura con `sips` (macOS) para no mandar varios MB al modelo.
-async function shrink({ data: image, mimeType }) {
-  const dir = await mkdtemp(path.join(os.tmpdir(), 'android-viewer-'));
-  try {
-    const src = path.join(dir, mimeType === 'image/bmp' ? 'in.bmp' : 'in.png');
-    const out = path.join(dir, 'out.jpg');
-    await writeFile(src, image);
-    await execFileAsync('sips', ['-Z', String(SCREENSHOT_MAX), '-s', 'format', 'jpeg', '-s', 'formatOptions', '80', src, '--out', out]);
-    return { data: await readFile(out), mimeType: 'image/jpeg' };
-  } catch (err) {
-    console.error('sips falló; se manda la captura original:', err.message);
-    return { data: image, mimeType };
-  } finally {
-    await rm(dir, { recursive: true, force: true });
   }
 }
 
@@ -127,19 +106,17 @@ server.registerTool(
   {
     title: 'Captura de pantalla',
     description:
-      'Captura la pantalla del display activo. Para tap/swipe usa coordenadas normalizadas: ' +
+      'Captura la pantalla del display activo (PNG). Para tap/swipe usa coordenadas normalizadas: ' +
       'x = píxel_x / ancho de la imagen, y = píxel_y / alto de la imagen.',
     inputSchema: { serial: serialArg },
     annotations: { readOnlyHint: true },
   },
   async ({ serial }) => {
-    const { result: capture } = await run('screenshot', 'GET', '/api/screenshot', { serial });
-    const { width, height } = imageSize(capture.data);
-    const { data, mimeType } = await shrink(capture);
+    const { result: shot } = await run('screenshot', 'GET', '/api/screenshot', { serial, max: SCREENSHOT_MAX });
     return {
       content: [
-        { type: 'image', data: data.toString('base64'), mimeType },
-        { type: 'text', text: `Pantalla de ${width}×${height} px (imagen reducida a lado mayor ≤ ${SCREENSHOT_MAX}).` },
+        { type: 'image', data: shot.data.toString('base64'), mimeType: shot.mimeType },
+        { type: 'text', text: `Pantalla de ${shot.screenWidth}×${shot.screenHeight} px (imagen con lado mayor ≤ ${SCREENSHOT_MAX}).` },
       ],
     };
   },

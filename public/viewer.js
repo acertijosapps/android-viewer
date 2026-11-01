@@ -301,7 +301,7 @@ setInterval(() => refreshTargets(), TARGETS_REFRESH_MS);
 document.querySelectorAll('[data-key]').forEach((b) => (b.onclick = () => send({ type: 'key', key: b.dataset.key })));
 document.querySelectorAll('[data-rotate]').forEach((b) => (b.onclick = () => send({ type: 'rotate', direction: b.dataset.rotate })));
 
-// Captura a resolución completa (la del canvas es la del video, reducida).
+// Captura a resolución completa (la del canvas es la del video, reducida); el visor ya la da en PNG.
 $('#screenshot').onclick = async () => {
   if (!serial) return;
   const t = selected();
@@ -309,15 +309,8 @@ $('#screenshot').onclick = async () => {
   try {
     const res = await fetch(`api/screenshot?serial=${encodeURIComponent(serial)}`);
     if (!res.ok) throw new Error((await res.json()).error);
-    const bitmap = await createImageBitmap(await res.blob());
-    const out = document.createElement('canvas');
-    out.width = bitmap.width;
-    out.height = bitmap.height;
-    out.getContext('2d').drawImage(bitmap, 0, 0);
-    bitmap.close();
-    const png = await new Promise((resolve) => out.toBlob(resolve, 'image/png'));
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(png);
+    a.href = URL.createObjectURL(await res.blob());
     a.download = `${t?.avd || serial}-${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.png`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);

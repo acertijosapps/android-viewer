@@ -324,7 +324,7 @@ class DeviceSession {
   async sendSnapshot(targets) {
     const { displayId } = this.state;
     try {
-      const { data } = await screencap(this.serial, displayId);
+      const { data } = await screencap(this.serial, displayId, { format: 'bmp' });
       const msg = Buffer.concat([Buffer.from([FLAG_IMAGE]), data]);
       for (const ws of targets) if (ws.readyState === ws.OPEN) ws.send(msg);
     } catch (err) {
@@ -496,9 +496,17 @@ function readJson(req) {
 async function handleApi(req, res, url) {
   const route = `${req.method} ${url.pathname}`;
   if (url.pathname === '/api/screenshot' && req.method === 'GET') {
-    const { data, mimeType } = await actions.screenshot({ serial: await resolveSerial(url.searchParams.get('serial')) });
-    res.writeHead(200, { 'content-type': mimeType, 'cache-control': 'no-store' });
-    res.end(data);
+    const shot = await actions.screenshot({
+      serial: await resolveSerial(url.searchParams.get('serial')),
+      max: url.searchParams.get('max'),
+    });
+    res.writeHead(200, {
+      'content-type': shot.mimeType,
+      'cache-control': 'no-store',
+      'x-screen-width': shot.screenWidth,
+      'x-screen-height': shot.screenHeight,
+    });
+    res.end(shot.data);
     return;
   }
   const handler = API[route];
