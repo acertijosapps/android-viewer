@@ -100,6 +100,10 @@ Con alguien mirando el visor, las acciones pasan por su sesión: el panel se act
 
 Se probó primero [ws-scrcpy](https://github.com/NetrisTV/ws-scrcpy) (fork maxduke, v0.9.2): el stream y el input funcionan, pero al cambiar de postura el video se congela hasta recargar (su server scrcpy 1.19 queda atado al display anterior) y no tiene controles de postura.
 
+## Contribuir
+
+Modelo de ramas (`main` · `beta`), Conventional Commits y releases en [CONTRIBUTING.md](./CONTRIBUTING.md); cambios en [CHANGELOG.md](./CHANGELOG.md).
+
 ## Author
 
 Made by [AcertijosApps](https://acertijosapps.com/librerias). See the rest of our libraries at

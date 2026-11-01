@@ -1,0 +1,53 @@
+#!/bin/sh
+# ─────────────────────────────────────────────────────────────────────────
+# Atenea · commit-msg · valida Conventional Commits (manual de versionado Venteks)
+#
+# Git-native: corre para CUALQUIER commit (humano o agente), esté o no Claude.
+# Bloquea el commit si el mensaje no cumple. Escape puntual: git commit --no-verify.
+#
+# Formato exigido:  <tipo>(<alcance opcional>)(!): <descripción en imperativo>
+#   tipos: feat fix docs style refactor perf test build ci chore revert
+#   ejemplos:  feat(auth): agregar login por sesión
+#              fix: corregir cálculo de permisos
+#              feat(store)!: cambiar shape del estado (BREAKING CHANGE)
+# ─────────────────────────────────────────────────────────────────────────
+
+msg_file="$1"
+first_line="$(head -n 1 "$msg_file")"
+
+# Saltar commits de merge/revert automáticos y fixup/squash.
+case "$first_line" in
+  "Merge "*|"Revert "*|"fixup!"*|"squash!"*) exit 0 ;;
+esac
+
+pattern='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9._/-]+\))?(!)?: .+'
+
+if printf '%s' "$first_line" | grep -Eq "$pattern"; then
+  # Aviso suave: coherencia tipo ↔ prefijo de rama (no bloquea).
+  # Una rama feat/* es un contenedor de feature: acumula fix/docs/refactor/chore/
+  # test intermedios de forma legítima, así que NO se avisa sobre ella. Solo se
+  # revisan fix/* y hotfix/*, que son de propósito único.
+  branch="$(git symbolic-ref --short HEAD 2>/dev/null || echo '')"
+  type="$(printf '%s' "$first_line" | sed -E 's/^([a-z]+).*/\1/')"
+  case "$branch" in
+    fix/*)     [ "$type" = "fix" ]  || printf '⚠️  Atenea: rama fix/* pero commit "%s" (¿debería ser fix?)\n' "$type" >&2 ;;
+    hotfix/*)  [ "$type" = "fix" ]  || printf '⚠️  Atenea: rama hotfix/* pero commit "%s" (¿debería ser fix?)\n' "$type" >&2 ;;
+  esac
+  exit 0
+fi
+
+cat >&2 <<'EOF'
+✕ Atenea · commit rechazado: el mensaje no sigue Conventional Commits.
+
+  Formato:  <tipo>(<alcance>)(!): <descripción en imperativo>
+  Tipos:    feat fix docs style refactor perf test build ci chore revert
+
+  Ejemplos válidos:
+    feat(auth): agregar login por sesión
+    fix: corregir cálculo de permisos
+    feat(store)!: cambiar shape del estado
+
+  Manual de versionado del equipo (plugin Atenea, skill git-flow).
+  Bypass puntual (no recomendado):  git commit --no-verify
+EOF
+exit 1
