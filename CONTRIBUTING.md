@@ -10,7 +10,7 @@ Use the Node.js version in [`.nvmrc`](./.nvmrc). Install dependencies from the r
 npm install
 ```
 
-`npm install` also wires the repository git hooks (`core.hooksPath` → `.githooks/`).
+`npm install` also wires the repository git hooks (`core.hooksPath` → `.githooks/`) through the `prepare` script, which does not run when the package is installed as a dependency.
 
 You need the Android SDK (`adb` and `emulator`). The tools are looked up in `ANDROID_HOME`, `ANDROID_SDK_ROOT` or the default SDK location; override them with `ADB` and `EMULATOR`.
 

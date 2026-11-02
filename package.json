@@ -22,7 +22,7 @@
     "start": "node bin/android-viewer.js",
     "mcp": "node bin/android-viewer.js mcp",
     "check": "node --check bin/android-viewer.js && node --check server.js && node --check lib/device.js && node --check mcp/server.js && node --check public/viewer.js",
-    "postinstall": "git config core.hooksPath .githooks || exit 0"
+    "prepare": "git config core.hooksPath .githooks || exit 0"
   },
   "keywords": [
     "android",
