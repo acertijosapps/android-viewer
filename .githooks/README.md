@@ -15,10 +15,14 @@ persona o por un agente. Alinean el manual de versionado del equipo.
 El proyecto lo automatiza con un script `prepare` en `package.json`:
 
 ```json
-"scripts": { "prepare": "git config core.hooksPath .githooks || true" }
+"scripts": { "prepare": "git config core.hooksPath .githooks || exit 0" }
 ```
 
-Así, en cada `yarn install` queda cableado. Manual, si hiciera falta:
+Así, en cada `npm install` del propio repo queda cableado. Se usa `prepare` y no `postinstall`
+a propósito: npm ejecuta el `postinstall` de las dependencias, así que instalar el paquete en otro
+repo le cambiaría su `core.hooksPath`; `prepare` no corre al instalar desde el registro.
+
+Manual, si hiciera falta:
 
 ```bash
 git config core.hooksPath .githooks
