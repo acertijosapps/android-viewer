@@ -10,9 +10,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/); version
 ### Cambiado
 
 ### Corregido
-- El cableado de los git hooks (`git config core.hooksPath .githooks`) pasa de `postinstall` a `prepare`: npm ejecuta el `postinstall` de las dependencias, así que `npm install @acertijosapps/android-viewer` dentro de otro repo git le cambiaba su `core.hooksPath` y desactivaba sus hooks (husky, etc.). `prepare` solo corre en el `npm install` del propio repo.
 
 ### Eliminado
+
+## [1.0.2] - 2026-11-02
+
+### Corregido
+- El cableado de los git hooks (`git config core.hooksPath .githooks`) pasa de `postinstall` a `prepare`: npm ejecuta el `postinstall` de las dependencias, así que `npm install @acertijosapps/android-viewer` dentro de otro repo git le cambiaba su `core.hooksPath` y desactivaba sus hooks (husky, etc.). `prepare` solo corre en el `npm install` del propio repo.
 
 ## [1.0.1] - 2026-11-01
 
