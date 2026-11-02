@@ -1,5 +1,6 @@
 {
   "name": "@acertijosapps/android-viewer",
+  "mcpName": "io.github.acertijosapps/android-viewer",
   "version": "1.0.0",
   "description": "Visor web del emulador de Android (screenrecord H.264 + WebCodecs, input por adb, posturas de plegable) y MCP para que un agente lo maneje.",
   "type": "module",

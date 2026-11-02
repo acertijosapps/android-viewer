@@ -64,6 +64,9 @@ Any other MCP client:
 }
 ```
 
+Also listed in the [official MCP Registry](https://registry.modelcontextprotocol.io) as
+`io.github.acertijosapps/android-viewer`.
+
 Keep the viewer running (`npx @acertijosapps/android-viewer`) to watch what the agent does. Without
 it, the MCP drives the device through `adb` directly.
 
