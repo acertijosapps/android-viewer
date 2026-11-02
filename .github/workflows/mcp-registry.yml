@@ -1,0 +1,72 @@
+name: MCP Registry
+
+# Valida server.json en cada PR y publica en el registro oficial de MCP
+# (io.github.acertijosapps/android-viewer) al crear un Release de GitHub, después de
+# `npm publish`: el registro comprueba que el paquete de npm ya trae `mcpName`.
+
+on:
+  pull_request:
+    branches: [beta, main]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+concurrency:
+  group: mcp-registry-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  MCP_PUBLISHER_VERSION: v1.8.1
+
+jobs:
+  registry:
+    name: Validar y publicar en el registro de MCP
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC: el namespace io.github.acertijosapps sale del repo
+    steps:
+      - uses: actions/checkout@v5
+
+      # package.json es la fuente de la versión; server.json la toma de ahí.
+      - name: Sincronizar la versión de server.json
+        run: |
+          VERSION=$(jq -r .version package.json)
+          jq --arg v "$VERSION" '.version = $v | .packages[0].version = $v' server.json > server.tmp
+          mv server.tmp server.json
+          jq '{name, version, package: .packages[0].version}' server.json
+
+      - name: Instalar cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Descargar y verificar mcp-publisher
+        run: |
+          set -euo pipefail
+          os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+          arch="$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
+          archive="mcp-publisher_${os}_${arch}.tar.gz"
+          base_url="https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}"
+
+          curl --fail --location --silent --show-error --output "$archive" "$base_url/$archive"
+          curl --fail --location --silent --show-error --output "$archive.sigstore.json" "$base_url/$archive.sigstore.json"
+          cosign verify-blob \
+            --bundle "$archive.sigstore.json" \
+            --certificate-identity "https://github.com/modelcontextprotocol/registry/.github/workflows/release.yml@refs/tags/${MCP_PUBLISHER_VERSION}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "$archive"
+          tar xzf "$archive" mcp-publisher
+          rm -f "$archive" "$archive.sigstore.json"
+
+      - name: Validar server.json
+        run: ./mcp-publisher validate server.json
+
+      - name: Autenticar con el registro (OIDC)
+        if: github.event_name != 'pull_request'
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publicar en el registro
+        if: github.event_name != 'pull_request'
+        run: ./mcp-publisher publish
